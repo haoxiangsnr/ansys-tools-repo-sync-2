@@ -33,26 +33,33 @@ Run with:
       --from-dir <path-to-dir-containing-files-to-sync> \
       --to-dir <target-dir-for-sync> \
       --include-manifest <path-to-manifest>
-
+      --branch_checked_out <branch-name>
+      --new-branch-name <branch-name>
+      --pr-title <pr-title>
 """
+
 import click
 
 from .repo_sync import synchronize as _synchronize
 
 
 @click.command(short_help="Copy the content of a repository into an other repository.")
-@click.option("--owner", "-o", type=str, help="Name of the owner or organization.", required=True)
-@click.option("--repository", "-r", type=str, help="Name of the repository.", required=True)
+@click.option(
+    "--owner", "-o", type=str, help="Name of the owner or organization.", required=True
+)
+@click.option(
+    "--repository", "-r", type=str, help="Name of the repository.", required=True
+)
 @click.option("--token", "-t", type=str, help="Personal access token.", required=True)
 @click.option(
     "--from-dir",
-    type=click.Path(file_okay=False, exists=True),
+    type=click.Path(file_okay=True, exists=True),
     help="Path to the folder containing the files to copy.",
     required=True,
 )
 @click.option(
     "--to-dir",
-    type=click.Path(file_okay=False),
+    type=click.Path(file_okay=True),
     help="Path of the folder that will contain the files (w.r.t. the root of the repository).",
     required=True,
 )
@@ -63,7 +70,9 @@ from .repo_sync import synchronize as _synchronize
     help="Manifest to mention accepted extension files.",
     required=True,
 )
-@click.option("--branch_checked_out", "-b", type=str, help="Branch to check out.", default="main")
+@click.option(
+    "--branch_checked_out", "-b", type=str, help="Branch to check out.", default="main"
+)
 @click.option(
     "--clean-to-dir",
     is_flag=True,
@@ -99,6 +108,18 @@ from .repo_sync import synchronize as _synchronize
     default=False,
     help="Generates a random branch name instead of the typical ``sync/file-sync``. Used for testing purposes mainly.",
 )
+@click.option(
+    "--new-branch-name",
+    type=str,
+    help="Name of the branch to create for the synchronization.",
+    default="sync/file-sync",
+)
+@click.option(
+    "--pr-title",
+    type=str,
+    help="Title of the pull request.",
+    default="sync: file sync performed by ansys-tools-repo-sync",
+)
 def synchronize(
     owner,
     repository,
@@ -112,6 +133,8 @@ def synchronize(
     dry_run,
     skip_ci,
     random_branch_name,
+    new_branch_name,
+    pr_title,
 ):
     """CLI command to execute the repository synchronization."""
     _synchronize(
@@ -127,6 +150,8 @@ def synchronize(
         dry_run=dry_run,
         skip_ci=skip_ci,
         random_branch_name=random_branch_name,
+        new_branch_name=new_branch_name,
+        pr_title=pr_title,
     )
 
 

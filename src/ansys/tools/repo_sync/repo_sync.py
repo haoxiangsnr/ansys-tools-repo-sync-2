@@ -183,6 +183,10 @@ def synchronize(
         Whether to add a ``[skip ci]`` prefix to the commit message or not. By default ``False``.
     random_branch_name : bool, optional
         For testing purposes - generates a random suffix for the branch name ``sync/file-sync``.
+    new_branch_name : str, optional
+        Name of the new branch to be created, by default "sync/file-sync".
+    pr_title : str, optional
+        Title of the pull request, by default "sync: file sync performed by ansys-tools-repo-sync".
 
     Returns
     -------
@@ -227,7 +231,8 @@ def synchronize(
 
     # Define the destination path for the files to be synced
     destination_path = os.path.join(repo_path, to_dir)
-    os.makedirs(destination_path, exist_ok=True)
+    if os.path.isdir(destination_path):
+        os.makedirs(destination_path, exist_ok=True)
 
     # If requested, clean the destination path
     if clean_to_dir:
@@ -239,12 +244,16 @@ def synchronize(
 
     # Copy local folder contents to the cloned repository
     print(f">>> Moving desired files from {from_dir} to {destination_path} ...")
-    shutil.copytree(
-        from_dir,
-        os.path.join(destination_path),
-        ignore=include_patterns(*accepted_extensions),
-        dirs_exist_ok=True,
-    )
+    if os.path.isdir(destination_path):
+        shutil.copytree(
+            from_dir,
+            os.path.join(destination_path),
+            ignore=include_patterns(*accepted_extensions),
+            dirs_exist_ok=True,
+        )
+    else:
+        # copy files to the destination path
+        shutil.copy2(from_dir, destination_path)
 
     print(
         f">>> Checking out new branch '{new_branch_name}' from '{branch_checked_out}'..."
