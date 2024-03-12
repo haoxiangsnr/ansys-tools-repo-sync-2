@@ -1,25 +1,3 @@
-# Copyright (C) 2023 - 2024 ANSYS, Inc. and/or its affiliates.
-# SPDX-License-Identifier: MIT
-#
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
 """Tool to copy the content of one repo toward an other.
 
 Run with:
@@ -30,8 +8,8 @@ Run with:
       --token <token> \
       --owner <organization-name> \
       --repository <repository-name> \
-      --from-dir <path-to-dir-containing-files-to-sync> \
-      --to-dir <target-dir-for-sync> \
+        --from-path-list <path1> --from-path-list <path2> \
+            --to-path-list <path1> --to-path-list <path2> \
       --include-manifest <path-to-manifest>
       --branch_checked_out <branch-name>
       --new-branch-name <branch-name>
@@ -52,15 +30,17 @@ from .repo_sync import synchronize as _synchronize
 )
 @click.option("--token", "-t", type=str, help="Personal access token.", required=True)
 @click.option(
-    "--from-dir",
-    type=click.Path(file_okay=True, exists=True),
-    help="Path to the folder containing the files to copy.",
+    "--from-path-list",
+    "-f",
+    multiple=True,
+    type=str,
     required=True,
 )
 @click.option(
-    "--to-dir",
-    type=click.Path(file_okay=True),
-    help="Path of the folder that will contain the files (w.r.t. the root of the repository).",
+    "--to-path-list",
+    "-t",
+    multiple=True,
+    type=str,
     required=True,
 )
 @click.option(
@@ -124,8 +104,8 @@ def synchronize(
     owner,
     repository,
     token,
-    from_dir,
-    to_dir,
+    from_path_list,
+    to_path_list,
     include_manifest,
     branch_checked_out,
     clean_to_dir,
@@ -141,8 +121,8 @@ def synchronize(
         owner=owner,
         repository=repository,
         token=token,
-        from_dir=from_dir,
-        to_dir=to_dir,
+        from_path_list=from_path_list,
+        to_path_list=to_path_list,
         clean_to_dir=clean_to_dir,
         clean_to_dir_based_on_manifest=clean_to_dir_based_on_manifest,
         include_manifest=include_manifest,

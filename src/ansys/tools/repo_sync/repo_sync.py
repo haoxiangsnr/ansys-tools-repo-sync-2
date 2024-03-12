@@ -25,6 +25,7 @@ import re
 import shutil
 import tempfile
 from fnmatch import filter
+from pathlib import Path
 from typing import List, Union
 
 from git import Repo
@@ -141,9 +142,9 @@ def synchronize(
     owner: str,
     repository: str,
     token: str,
-    from_dir: str,
-    to_dir: str,
     include_manifest: str,
+    from_path_list: List[str],
+    to_path_list: List[str],
     branch_checked_out: str = "main",
     clean_to_dir: bool = False,
     clean_to_dir_based_on_manifest: bool = False,
@@ -223,37 +224,43 @@ def synchronize(
 
     # Clone the repository
     print(f">>> Cloning repository '{owner}/{repository}'...")
-    repo_path = os.path.join(temp_dir.name, repository)
+    repo_path = Path(temp_dir.name) / repository
     authenticated_url = (
         f"https://{token}@{pygithub_repo.html_url.split('https://')[-1]}"
     )
-    Repo.clone_from(authenticated_url, repo_path)
-
-    # Define the destination path for the files to be synced
-    destination_path = os.path.join(repo_path, to_dir)
-    if os.path.isdir(destination_path):
-        os.makedirs(destination_path, exist_ok=True)
-
-    # If requested, clean the destination path
-    if clean_to_dir:
-        print(f">>> Cleaning content inside '{to_dir}'...")
-        acc_regex = adapt_regex_from_manifest(accepted_extensions)
-        delete_folder_contents(
-            destination_path, acc_regex, clean_to_dir_based_on_manifest
-        )
+    Repo.clone_from(authenticated_url, str(repo_path))
 
     # Copy local folder contents to the cloned repository
-    print(f">>> Moving desired files from {from_dir} to {destination_path} ...")
-    if os.path.isdir(destination_path):
-        shutil.copytree(
-            from_dir,
-            os.path.join(destination_path),
-            ignore=include_patterns(*accepted_extensions),
-            dirs_exist_ok=True,
-        )
-    else:
-        # copy files to the destination path
-        shutil.copy2(from_dir, destination_path)
+    if isinstance(from_path_list, str):
+        from_path_list = [from_path_list]
+
+    if isinstance(to_path_list, str):
+        to_path_list = [to_path_list]
+
+    print(from_path_list, to_path_list)
+
+    for from_path, to_path in zip(from_path_list, to_path_list):
+        from_path = Path(from_path).resolve()
+        to_path = (repo_path / to_path).resolve()
+
+        # If requested, clean the destination path
+        if clean_to_dir:
+            print(f">>> Cleaning content inside '{to_path}'...")
+            acc_regex = adapt_regex_from_manifest(accepted_extensions)
+            delete_folder_contents(to_path, acc_regex, clean_to_dir_based_on_manifest)
+
+        # Copy local folder contents to the cloned repository
+        print(f">>> Moving desired files from {from_path} to {to_path} ...")
+        if from_path.is_dir():
+            shutil.copytree(
+                from_path,
+                repo_path / to_path,
+                ignore=include_patterns(*accepted_extensions),
+                dirs_exist_ok=True,
+            )
+        else:
+            # copy files to the destination path
+            shutil.copy2(from_path, os.path.join(repo_path, to_path))
 
     print(
         f">>> Checking out new branch '{new_branch_name}' from '{branch_checked_out}'..."
